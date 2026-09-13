@@ -1,0 +1,31 @@
+name: linguaflow_sdk
+description: Remote-first, typed localization runtime for Flutter.
+version: 0.1.0
+homepage: https://linguaflow.dev
+repository: https://github.com/ensarkurrt/linguaflow-flutter
+issue_tracker: https://github.com/ensarkurrt/linguaflow-flutter/issues
+environment:
+  sdk: '>=3.2.0 <4.0.0'
+  flutter: '>=3.24.0'
+dependencies:
+  collection: ^1.19.1
+  flutter:
+    sdk: flutter
+  http: ^1.2.2
+  intl: ^0.20.2
+  meta: ^1.16.0
+  shared_preferences: ^2.3.2
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  lints: ^6.1.0
+  test: ^1.31.0
+flutter:
+  uses-material-design: true
+  plugin:
+    platforms:
+      android:
+        package: dev.linguaflow.flutter
+        pluginClass: LinguaflowPlugin
+      ios:
+        pluginClass: LinguaflowPlugin

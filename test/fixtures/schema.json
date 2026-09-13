@@ -1,0 +1,12 @@
+{
+  "keys": ["cart.items", "home.title", "profile.greeting"],
+  "messages": {
+    "cart.items": { "arguments": { "count": "number" }, "tags": [] },
+    "home.title": { "arguments": {}, "tags": [] },
+    "profile.greeting": { "arguments": { "name": "string" }, "tags": [] }
+  },
+  "locales": ["en", "tr"],
+  "sourceLocale": "en",
+  "releaseId": "fixture",
+  "sequence": 1
+}

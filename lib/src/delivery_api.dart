@@ -1,0 +1,152 @@
+import 'dart:convert';
+
+import 'package:http/http.dart' as http;
+
+import 'device_integrity.dart';
+import 'linguaflow_config.dart';
+import 'linguaflow_models.dart';
+
+typedef TranslationBundle = Map<String, dynamic>;
+
+sealed class BundleDelivery {
+  const BundleDelivery();
+}
+
+class BundleNotModified extends BundleDelivery {
+  const BundleNotModified();
+}
+
+class BundleContent extends BundleDelivery {
+  const BundleContent(this.data, this.etag);
+
+  final TranslationBundle data;
+  final String? etag;
+}
+
+class MissingKeysReport {
+  const MissingKeysReport({
+    required this.requestId,
+    required this.releaseId,
+    required this.locale,
+    required this.appVersion,
+    required this.keys,
+  });
+
+  final String requestId;
+  final String releaseId;
+  final String locale;
+  final String appVersion;
+  final List<String> keys;
+
+  Map<String, Object> toJson() => {
+        'requestId': requestId,
+        'releaseId': releaseId,
+        'locale': locale,
+        'appVersion': appVersion,
+        'platform': 'flutter',
+        'keys': keys,
+      };
+}
+
+class DeliveryApi {
+  DeliveryApi({
+    required LinguaFlowConfig config,
+    required http.Client httpClient,
+    required Future<String> Function() installationId,
+    LinguaFlowDeviceIntegrityProvider? integrityProvider,
+  })  : _config = config,
+        _http = httpClient,
+        _installationId = installationId,
+        _integrityProvider = integrityProvider;
+
+  final LinguaFlowConfig _config;
+  final http.Client _http;
+  final Future<String> Function() _installationId;
+  final LinguaFlowDeviceIntegrityProvider? _integrityProvider;
+  LinguaFlowIntegrityGrant? _integrityGrant;
+
+  Future<LocaleManifest> manifest({
+    required String locale,
+    required bool explicit,
+  }) async {
+    final response = await _http.get(
+      _bundleUri('manifest'),
+      headers: await _headers({
+        explicit ? 'x-linguaflow-locale' : 'x-linguaflow-device-locale': locale,
+      }),
+    );
+    _ensureSuccess(response, 'Unable to resolve locale');
+    return LocaleManifest.fromJson(_decodeObject(response.body));
+  }
+
+  Future<BundleDelivery> bundle({
+    required String locale,
+    String? etag,
+  }) async {
+    final response = await _http.get(
+      _bundleUri(),
+      headers: await _headers({
+        'x-linguaflow-locale': locale,
+        if (etag != null) 'if-none-match': etag,
+      }),
+    );
+    if (response.statusCode == 304) return const BundleNotModified();
+    _ensureSuccess(response, 'Unable to download $locale bundle');
+    return BundleContent(
+        _decodeObject(response.body), response.headers['etag']);
+  }
+
+  Future<void> reportMissingKeys(MissingKeysReport report) async {
+    final uri = Uri.parse(linguaflowApiOrigin).resolve(
+      '/v1/telemetry/${Uri.encodeComponent(_config.branchKey)}/missing-keys',
+    );
+    final response = await _http.post(
+      uri,
+      headers: await _headers({'content-type': 'application/json'}),
+      body: jsonEncode(report.toJson()),
+    );
+    _ensureSuccess(response, 'Missing-key telemetry failed');
+  }
+
+  Uri _bundleUri([String? suffix]) {
+    final path = '/v1/bundles/${Uri.encodeComponent(_config.branchKey)}'
+        '${suffix == null ? '' : '/$suffix'}';
+    return Uri.parse(linguaflowApiOrigin).resolve(path);
+  }
+
+  Future<Map<String, String>> _headers(Map<String, String> input) async {
+    final headers = {
+      ...input,
+      'x-linguaflow-installation-id': await _installationId(),
+      'x-linguaflow-sdk': 'flutter',
+      'x-linguaflow-sdk-version': linguaFlowFlutterSdkVersion,
+      'x-linguaflow-contract-version':
+          linguaFlowRuntimeContractVersion.toString(),
+      if (_config.overlay != null) 'x-linguaflow-overlay': _config.overlay!,
+    };
+    final provider = _integrityProvider;
+    if (provider == null) return headers;
+    var grant = _integrityGrant;
+    if (grant == null || !grant.isUsable) {
+      grant = await provider.obtainGrant(branchKey: _config.branchKey);
+      _integrityGrant = grant;
+    }
+    return {...headers, 'x-linguaflow-integrity': grant.token};
+  }
+
+  void _ensureSuccess(http.Response response, String operation) {
+    if (response.statusCode < 200 || response.statusCode >= 300) {
+      throw LinguaFlowException(operation, response.statusCode);
+    }
+  }
+
+  TranslationBundle _decodeObject(String body) {
+    try {
+      final decoded = jsonDecode(body);
+      if (decoded is! Map) throw const FormatException();
+      return decoded.cast<String, dynamic>();
+    } on Object {
+      throw LinguaFlowException('Invalid LinguaFlow API response', null);
+    }
+  }
+}
