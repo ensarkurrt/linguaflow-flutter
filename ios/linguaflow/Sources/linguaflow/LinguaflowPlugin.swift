@@ -13,6 +13,12 @@ public final class LinguaflowPlugin: NSObject, FlutterPlugin {
   }
 
   public func handle(_ call: FlutterMethodCall, result: @escaping FlutterResult) {
+    if call.method == "appVersion" {
+      let name = Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String
+      let build = Bundle.main.object(forInfoDictionaryKey: "CFBundleVersion") as? String
+      result(["name": name ?? "", "code": build ?? ""])
+      return
+    }
     guard #available(iOS 14.0, *) else {
       if call.method == "isSupported" {
         result(false)

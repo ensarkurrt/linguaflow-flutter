@@ -14,22 +14,28 @@ class MissingKeyReportRequestDto {
   /// Returns a new [MissingKeyReportRequestDto] instance.
   MissingKeyReportRequestDto({
     required this.requestId,
-    required this.releaseId,
+    this.releaseId,
     required this.locale,
     this.appVersion = '',
-    required this.platform,
+    this.platform,
     this.keys = const [],
   });
 
   String requestId;
 
-  String releaseId;
+  ///
+  /// Please note: This property should have been non-nullable! Since the specification file
+  /// does not include a default value (using the "default:" property), however, the generated
+  /// source code must fall back to having a nullable type.
+  /// Consider adding a "default:" property in the specification file to hide this note.
+  ///
+  String? releaseId;
 
   String locale;
 
   String appVersion;
 
-  MissingKeyReportRequestDtoPlatformEnum platform;
+  MissingKeyReportRequestDtoPlatformEnum? platform;
 
   List<String> keys;
 
@@ -48,10 +54,10 @@ class MissingKeyReportRequestDto {
   int get hashCode =>
       // ignore: unnecessary_parenthesis
       (requestId.hashCode) +
-      (releaseId.hashCode) +
+      (releaseId == null ? 0 : releaseId!.hashCode) +
       (locale.hashCode) +
       (appVersion.hashCode) +
-      (platform.hashCode) +
+      (platform == null ? 0 : platform!.hashCode) +
       (keys.hashCode);
 
   @override
@@ -61,10 +67,18 @@ class MissingKeyReportRequestDto {
   Map<String, dynamic> toJson() {
     final json = <String, dynamic>{};
     json[r'requestId'] = this.requestId;
-    json[r'releaseId'] = this.releaseId;
+    if (this.releaseId != null) {
+      json[r'releaseId'] = this.releaseId;
+    } else {
+      json[r'releaseId'] = null;
+    }
     json[r'locale'] = this.locale;
     json[r'appVersion'] = this.appVersion;
-    json[r'platform'] = this.platform;
+    if (this.platform != null) {
+      json[r'platform'] = this.platform;
+    } else {
+      json[r'platform'] = null;
+    }
     json[r'keys'] = this.keys;
     return json;
   }
@@ -84,10 +98,6 @@ class MissingKeyReportRequestDto {
             'Required key "MissingKeyReportRequestDto[requestId]" is missing from JSON.');
         assert(json[r'requestId'] != null,
             'Required key "MissingKeyReportRequestDto[requestId]" has a null value in JSON.');
-        assert(json.containsKey(r'releaseId'),
-            'Required key "MissingKeyReportRequestDto[releaseId]" is missing from JSON.');
-        assert(json[r'releaseId'] != null,
-            'Required key "MissingKeyReportRequestDto[releaseId]" has a null value in JSON.');
         assert(json.containsKey(r'locale'),
             'Required key "MissingKeyReportRequestDto[locale]" is missing from JSON.');
         assert(json[r'locale'] != null,
@@ -96,10 +106,6 @@ class MissingKeyReportRequestDto {
             'Required key "MissingKeyReportRequestDto[appVersion]" is missing from JSON.');
         assert(json[r'appVersion'] != null,
             'Required key "MissingKeyReportRequestDto[appVersion]" has a null value in JSON.');
-        assert(json.containsKey(r'platform'),
-            'Required key "MissingKeyReportRequestDto[platform]" is missing from JSON.');
-        assert(json[r'platform'] != null,
-            'Required key "MissingKeyReportRequestDto[platform]" has a null value in JSON.');
         assert(json.containsKey(r'keys'),
             'Required key "MissingKeyReportRequestDto[keys]" is missing from JSON.');
         assert(json[r'keys'] != null,
@@ -109,11 +115,11 @@ class MissingKeyReportRequestDto {
 
       return MissingKeyReportRequestDto(
         requestId: mapValueOfType<String>(json, r'requestId')!,
-        releaseId: mapValueOfType<String>(json, r'releaseId')!,
+        releaseId: mapValueOfType<String>(json, r'releaseId'),
         locale: mapValueOfType<String>(json, r'locale')!,
         appVersion: mapValueOfType<String>(json, r'appVersion')!,
         platform:
-            MissingKeyReportRequestDtoPlatformEnum.fromJson(json[r'platform'])!,
+            MissingKeyReportRequestDtoPlatformEnum.fromJson(json[r'platform']),
         keys: json[r'keys'] is Iterable
             ? (json[r'keys'] as Iterable).cast<String>().toList(growable: false)
             : const [],
@@ -174,10 +180,8 @@ class MissingKeyReportRequestDto {
   /// The list of required keys that must be present in a JSON.
   static const requiredKeys = <String>{
     'requestId',
-    'releaseId',
     'locale',
     'appVersion',
-    'platform',
     'keys',
   };
 }

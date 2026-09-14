@@ -1,6 +1,6 @@
 import 'generated/runtime_contract/api.dart' as wire;
 
-const int linguaFlowRuntimeContractVersion = 1;
+const int linguaFlowRuntimeContractVersion = 2;
 const String linguaFlowFlutterSdkVersion = '0.1.0';
 
 class LinguaFlowException implements Exception {
@@ -65,6 +65,8 @@ class LocaleManifest {
     required this.rolloutCandidateReleaseId,
     required this.rolloutPercentage,
     required this.rolloutSelection,
+    required this.runtimeTelemetryToken,
+    required this.runtimeTelemetryExpiresAt,
   });
 
   factory LocaleManifest.fromJson(Map<String, dynamic> json) {
@@ -103,6 +105,8 @@ class LocaleManifest {
       rolloutCandidateReleaseId: contract.rollout.candidateReleaseId,
       rolloutPercentage: contract.rollout.percentage,
       rolloutSelection: contract.rollout.selection.toJson(),
+      runtimeTelemetryToken: contract.runtimeTelemetry?.token,
+      runtimeTelemetryExpiresAt: contract.runtimeTelemetry?.expiresAt,
     );
   }
 
@@ -124,6 +128,8 @@ class LocaleManifest {
   final String rolloutCandidateReleaseId;
   final int rolloutPercentage;
   final String rolloutSelection;
+  final String? runtimeTelemetryToken;
+  final DateTime? runtimeTelemetryExpiresAt;
 
   LocaleManifest withResolution(LocaleResolution resolution) => LocaleManifest(
         version: version,
@@ -144,6 +150,8 @@ class LocaleManifest {
         rolloutCandidateReleaseId: rolloutCandidateReleaseId,
         rolloutPercentage: rolloutPercentage,
         rolloutSelection: rolloutSelection,
+        runtimeTelemetryToken: runtimeTelemetryToken,
+        runtimeTelemetryExpiresAt: runtimeTelemetryExpiresAt,
       );
 
   Map<String, dynamic> toJson() => {
@@ -169,6 +177,12 @@ class LocaleManifest {
           'percentage': rolloutPercentage,
           'selection': rolloutSelection,
         },
+        'runtimeTelemetry': runtimeTelemetryToken == null
+            ? null
+            : {
+                'token': runtimeTelemetryToken,
+                'expiresAt': runtimeTelemetryExpiresAt?.toUtc().toIso8601String(),
+              },
       };
 }
 

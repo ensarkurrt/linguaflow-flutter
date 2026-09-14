@@ -10,18 +10,17 @@
 
 part of openapi.api;
 
-class MissingKeyReportResponseDto {
-  /// Returns a new [MissingKeyReportResponseDto] instance.
-  MissingKeyReportResponseDto({
+class RuntimeMetricReportResponseDto {
+  /// Returns a new [RuntimeMetricReportResponseDto] instance.
+  RuntimeMetricReportResponseDto({
     required this.accepted,
     this.reason,
     this.duplicate,
-    required this.recordedKeyCount,
   });
 
   bool accepted;
 
-  MissingKeyReportResponseDtoReasonEnum? reason;
+  RuntimeMetricReportResponseDtoReasonEnum? reason;
 
   ///
   /// Please note: This property should have been non-nullable! Since the specification file
@@ -31,29 +30,24 @@ class MissingKeyReportResponseDto {
   ///
   bool? duplicate;
 
-  /// Minimum value: 0
-  int recordedKeyCount;
-
   @override
   bool operator ==(Object other) =>
       identical(this, other) ||
-      other is MissingKeyReportResponseDto &&
+      other is RuntimeMetricReportResponseDto &&
           other.accepted == accepted &&
           other.reason == reason &&
-          other.duplicate == duplicate &&
-          other.recordedKeyCount == recordedKeyCount;
+          other.duplicate == duplicate;
 
   @override
   int get hashCode =>
       // ignore: unnecessary_parenthesis
       (accepted.hashCode) +
       (reason == null ? 0 : reason!.hashCode) +
-      (duplicate == null ? 0 : duplicate!.hashCode) +
-      (recordedKeyCount.hashCode);
+      (duplicate == null ? 0 : duplicate!.hashCode);
 
   @override
   String toString() =>
-      'MissingKeyReportResponseDto[accepted=$accepted, reason=$reason, duplicate=$duplicate, recordedKeyCount=$recordedKeyCount]';
+      'RuntimeMetricReportResponseDto[accepted=$accepted, reason=$reason, duplicate=$duplicate]';
 
   Map<String, dynamic> toJson() {
     final json = <String, dynamic>{};
@@ -68,14 +62,13 @@ class MissingKeyReportResponseDto {
     } else {
       json[r'duplicate'] = null;
     }
-    json[r'recordedKeyCount'] = this.recordedKeyCount;
     return json;
   }
 
-  /// Returns a new [MissingKeyReportResponseDto] instance and imports its values from
+  /// Returns a new [RuntimeMetricReportResponseDto] instance and imports its values from
   /// [value] if it's a [Map], null otherwise.
   // ignore: prefer_constructors_over_static_methods
-  static MissingKeyReportResponseDto? fromJson(dynamic value) {
+  static RuntimeMetricReportResponseDto? fromJson(dynamic value) {
     if (value is Map) {
       final json = value.cast<String, dynamic>();
 
@@ -84,34 +77,30 @@ class MissingKeyReportResponseDto {
       // Note 2: this code is stripped in release mode!
       assert(() {
         assert(json.containsKey(r'accepted'),
-            'Required key "MissingKeyReportResponseDto[accepted]" is missing from JSON.');
+            'Required key "RuntimeMetricReportResponseDto[accepted]" is missing from JSON.');
         assert(json[r'accepted'] != null,
-            'Required key "MissingKeyReportResponseDto[accepted]" has a null value in JSON.');
-        assert(json.containsKey(r'recordedKeyCount'),
-            'Required key "MissingKeyReportResponseDto[recordedKeyCount]" is missing from JSON.');
-        assert(json[r'recordedKeyCount'] != null,
-            'Required key "MissingKeyReportResponseDto[recordedKeyCount]" has a null value in JSON.');
+            'Required key "RuntimeMetricReportResponseDto[accepted]" has a null value in JSON.');
         return true;
       }());
 
-      return MissingKeyReportResponseDto(
+      return RuntimeMetricReportResponseDto(
         accepted: mapValueOfType<bool>(json, r'accepted')!,
-        reason: MissingKeyReportResponseDtoReasonEnum.fromJson(json[r'reason']),
+        reason:
+            RuntimeMetricReportResponseDtoReasonEnum.fromJson(json[r'reason']),
         duplicate: mapValueOfType<bool>(json, r'duplicate'),
-        recordedKeyCount: mapValueOfType<int>(json, r'recordedKeyCount')!,
       );
     }
     return null;
   }
 
-  static List<MissingKeyReportResponseDto> listFromJson(
+  static List<RuntimeMetricReportResponseDto> listFromJson(
     dynamic json, {
     bool growable = false,
   }) {
-    final result = <MissingKeyReportResponseDto>[];
+    final result = <RuntimeMetricReportResponseDto>[];
     if (json is List && json.isNotEmpty) {
       for (final row in json) {
-        final value = MissingKeyReportResponseDto.fromJson(row);
+        final value = RuntimeMetricReportResponseDto.fromJson(row);
         if (value != null) {
           result.add(value);
         }
@@ -120,12 +109,12 @@ class MissingKeyReportResponseDto {
     return result.toList(growable: growable);
   }
 
-  static Map<String, MissingKeyReportResponseDto> mapFromJson(dynamic json) {
-    final map = <String, MissingKeyReportResponseDto>{};
+  static Map<String, RuntimeMetricReportResponseDto> mapFromJson(dynamic json) {
+    final map = <String, RuntimeMetricReportResponseDto>{};
     if (json is Map && json.isNotEmpty) {
       json = json.cast<String, dynamic>(); // ignore: parameter_assignments
       for (final entry in json.entries) {
-        final value = MissingKeyReportResponseDto.fromJson(entry.value);
+        final value = RuntimeMetricReportResponseDto.fromJson(entry.value);
         if (value != null) {
           map[entry.key] = value;
         }
@@ -134,17 +123,17 @@ class MissingKeyReportResponseDto {
     return map;
   }
 
-  // maps a json object with a list of MissingKeyReportResponseDto-objects as value to a dart map
-  static Map<String, List<MissingKeyReportResponseDto>> mapListFromJson(
+  // maps a json object with a list of RuntimeMetricReportResponseDto-objects as value to a dart map
+  static Map<String, List<RuntimeMetricReportResponseDto>> mapListFromJson(
     dynamic json, {
     bool growable = false,
   }) {
-    final map = <String, List<MissingKeyReportResponseDto>>{};
+    final map = <String, List<RuntimeMetricReportResponseDto>>{};
     if (json is Map && json.isNotEmpty) {
       // ignore: parameter_assignments
       json = json.cast<String, dynamic>();
       for (final entry in json.entries) {
-        map[entry.key] = MissingKeyReportResponseDto.listFromJson(
+        map[entry.key] = RuntimeMetricReportResponseDto.listFromJson(
           entry.value,
           growable: growable,
         );
@@ -156,17 +145,15 @@ class MissingKeyReportResponseDto {
   /// The list of required keys that must be present in a JSON.
   static const requiredKeys = <String>{
     'accepted',
-    'recordedKeyCount',
   };
 }
 
-enum MissingKeyReportResponseDtoReasonEnum {
-  disabled._(r'disabled'),
+enum RuntimeMetricReportResponseDtoReasonEnum {
   telemetryTicketRequired._(r'telemetry_ticket_required'),
   ;
 
   /// Instantiate a new enum with the provided value.
-  const MissingKeyReportResponseDtoReasonEnum._(this._value);
+  const RuntimeMetricReportResponseDtoReasonEnum._(this._value);
 
   /// The underlying value of this enum member.
   final String _value;
@@ -177,21 +164,21 @@ enum MissingKeyReportResponseDtoReasonEnum {
   /// Encodes this enum as a value suitable for JSON.
   String toJson() => _value;
 
-  /// Returns the instance of [MissingKeyReportResponseDtoReasonEnum] that was successfully decoded
+  /// Returns the instance of [RuntimeMetricReportResponseDtoReasonEnum] that was successfully decoded
   /// from the passed [value] on success, null otherwise.
-  static MissingKeyReportResponseDtoReasonEnum? fromJson(dynamic value) =>
-      MissingKeyReportResponseDtoReasonEnumTypeTransformer().decode(value);
+  static RuntimeMetricReportResponseDtoReasonEnum? fromJson(dynamic value) =>
+      RuntimeMetricReportResponseDtoReasonEnumTypeTransformer().decode(value);
 
-  /// Returns a [List] containing instances of [MissingKeyReportResponseDtoReasonEnum]
+  /// Returns a [List] containing instances of [RuntimeMetricReportResponseDtoReasonEnum]
   /// that were successfully decoded from the passed [JSON][json].
-  static List<MissingKeyReportResponseDtoReasonEnum> listFromJson(
+  static List<RuntimeMetricReportResponseDtoReasonEnum> listFromJson(
     dynamic json, {
     bool growable = false,
   }) {
-    final result = <MissingKeyReportResponseDtoReasonEnum>[];
+    final result = <RuntimeMetricReportResponseDtoReasonEnum>[];
     if (json is List && json.isNotEmpty) {
       for (final row in json) {
-        final value = MissingKeyReportResponseDtoReasonEnum.fromJson(row);
+        final value = RuntimeMetricReportResponseDtoReasonEnum.fromJson(row);
         if (value != null) {
           result.add(value);
         }
@@ -201,18 +188,18 @@ enum MissingKeyReportResponseDtoReasonEnum {
   }
 }
 
-/// Transformation class that can [encode] an instance of [MissingKeyReportResponseDtoReasonEnum] to String,
-/// and [decode] dynamic data back to [MissingKeyReportResponseDtoReasonEnum].
-class MissingKeyReportResponseDtoReasonEnumTypeTransformer {
-  factory MissingKeyReportResponseDtoReasonEnumTypeTransformer() =>
+/// Transformation class that can [encode] an instance of [RuntimeMetricReportResponseDtoReasonEnum] to String,
+/// and [decode] dynamic data back to [RuntimeMetricReportResponseDtoReasonEnum].
+class RuntimeMetricReportResponseDtoReasonEnumTypeTransformer {
+  factory RuntimeMetricReportResponseDtoReasonEnumTypeTransformer() =>
       _instance ??=
-          const MissingKeyReportResponseDtoReasonEnumTypeTransformer._();
+          const RuntimeMetricReportResponseDtoReasonEnumTypeTransformer._();
 
-  const MissingKeyReportResponseDtoReasonEnumTypeTransformer._();
+  const RuntimeMetricReportResponseDtoReasonEnumTypeTransformer._();
 
-  String encode(MissingKeyReportResponseDtoReasonEnum data) => data._value;
+  String encode(RuntimeMetricReportResponseDtoReasonEnum data) => data._value;
 
-  /// Returns the instance of [MissingKeyReportResponseDtoReasonEnum] that was successfully decoded
+  /// Returns the instance of [RuntimeMetricReportResponseDtoReasonEnum] that was successfully decoded
   /// from the passed [data] value on success, null otherwise.
   ///
   /// If [allowNull] is true and the [dynamic value][data] cannot be decoded successfully,
@@ -221,17 +208,16 @@ class MissingKeyReportResponseDtoReasonEnumTypeTransformer {
   ///
   /// The [allowNull] is very handy when an API changes and a new enum value is added or removed,
   /// and users are still using an old app with the old code.
-  MissingKeyReportResponseDtoReasonEnum? decode(dynamic data,
+  RuntimeMetricReportResponseDtoReasonEnum? decode(dynamic data,
       {bool allowNull = true}) {
-    if (data is MissingKeyReportResponseDtoReasonEnum) {
+    if (data is RuntimeMetricReportResponseDtoReasonEnum) {
       return data;
     }
     if (data != null) {
       switch (data) {
-        case r'disabled':
-          return MissingKeyReportResponseDtoReasonEnum.disabled;
         case r'telemetry_ticket_required':
-          return MissingKeyReportResponseDtoReasonEnum.telemetryTicketRequired;
+          return RuntimeMetricReportResponseDtoReasonEnum
+              .telemetryTicketRequired;
         default:
           if (!allowNull) {
             throw ArgumentError('Unknown enum value to decode: $data');
@@ -242,5 +228,5 @@ class MissingKeyReportResponseDtoReasonEnumTypeTransformer {
   }
 
   /// The singleton instance of this transformer.
-  static MissingKeyReportResponseDtoReasonEnumTypeTransformer? _instance;
+  static RuntimeMetricReportResponseDtoReasonEnumTypeTransformer? _instance;
 }

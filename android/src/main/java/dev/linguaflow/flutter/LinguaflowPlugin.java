@@ -1,6 +1,9 @@
 package dev.linguaflow.flutter;
 
 import android.content.Context;
+import android.content.pm.PackageInfo;
+import android.content.pm.PackageManager;
+import android.os.Build;
 import androidx.annotation.NonNull;
 import com.google.android.play.core.integrity.IntegrityManagerFactory;
 import com.google.android.play.core.integrity.StandardIntegrityManager;
@@ -8,6 +11,7 @@ import io.flutter.embedding.engine.plugins.FlutterPlugin;
 import io.flutter.plugin.common.MethodCall;
 import io.flutter.plugin.common.MethodChannel;
 import java.util.Map;
+import java.util.HashMap;
 import java.util.concurrent.ConcurrentHashMap;
 
 /** Flutter bridge for Google Play Integrity standard requests. */
@@ -38,8 +42,35 @@ public final class LinguaflowPlugin implements FlutterPlugin, MethodChannel.Meth
   public void onMethodCall(@NonNull MethodCall call, @NonNull MethodChannel.Result result) {
     switch (call.method) {
       case "packageName" -> result.success(applicationContext.getPackageName());
+      case "appVersion" -> appVersion(result);
       case "requestToken" -> requestToken(call, result);
       default -> result.notImplemented();
+    }
+  }
+
+  @SuppressWarnings("deprecation")
+  private void appVersion(MethodChannel.Result result) {
+    try {
+      PackageInfo info =
+          Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU
+              ? applicationContext
+                  .getPackageManager()
+                  .getPackageInfo(
+                      applicationContext.getPackageName(),
+                      PackageManager.PackageInfoFlags.of(0))
+              : applicationContext
+                  .getPackageManager()
+                  .getPackageInfo(applicationContext.getPackageName(), 0);
+      long code =
+          Build.VERSION.SDK_INT >= Build.VERSION_CODES.P
+              ? info.getLongVersionCode()
+              : info.versionCode;
+      Map<String, String> version = new HashMap<>();
+      version.put("name", info.versionName == null ? "" : info.versionName);
+      version.put("code", Long.toString(code));
+      result.success(version);
+    } catch (PackageManager.NameNotFoundException error) {
+      result.error("package_info_unavailable", error.getLocalizedMessage(), null);
     }
   }
 

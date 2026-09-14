@@ -57,6 +57,7 @@ void main() {
     final httpClient = MockClient((request) async {
       if (request.url.path.endsWith('/manifest')) {
         expect(request.headers['x-linguaflow-device-locale'], 'tr-TR');
+        expect(request.headers['x-linguaflow-contract-version'], '2');
         expect(request.headers['x-linguaflow-installation-id'],
             matches(RegExp(r'^[a-f0-9]{32}$')));
         return http.Response(
@@ -154,7 +155,7 @@ void main() {
 
   test('normalizes configured locale mapping keys', () {
     final manifest = LocaleManifest.fromJson({
-      'version': 1,
+      'version': 2,
       'releaseId': 'rel_4',
       'sequence': 1,
       'requestedLocale': 'ar-SA',
@@ -173,6 +174,7 @@ void main() {
       'overlays': <String>[],
       'overlay': null,
       'missingKeyTelemetry': {'enabled': false, 'maxBatchSize': 100},
+      'runtimeTelemetry': null,
     });
     expect(manifest.localeMappings['ar-sa'], 'he');
   });
@@ -180,7 +182,7 @@ void main() {
   test('rejects unknown locale resolution reasons', () {
     expect(
       () => LocaleManifest.fromJson({
-        'version': 1,
+        'version': 2,
         'releaseId': 'rel_invalid',
         'resolvedLocale': 'en',
         'reason': 'guessed',
@@ -194,7 +196,7 @@ void main() {
 
   test('rejects unknown runtime contract versions', () {
     expect(
-      () => LocaleManifest.fromJson({'version': 2}),
+      () => LocaleManifest.fromJson({'version': 1}),
       throwsA(isA<LinguaFlowException>()),
     );
   });
@@ -204,6 +206,52 @@ void main() {
       () => LinguaFlowConfig.fromJson({'branchKey': 'not-public'}),
       throwsFormatException,
     );
+  });
+
+  test('rejects invalid directly constructed config before network access', () {
+    expect(
+      () => LinguaFlowClient(
+        config: const LinguaFlowConfig(branchKey: 'secret'),
+      ),
+      throwsArgumentError,
+    );
+    expect(
+      () => LinguaFlowClient(
+        config: const LinguaFlowConfig(
+          branchKey: 'br_live_test',
+          bundledAssetPath: '../secrets',
+        ),
+      ),
+      throwsArgumentError,
+    );
+  });
+
+  test('rejects non-string translation bundle leaves', () async {
+    final client = LinguaFlowClient(
+      config: const LinguaFlowConfig(
+        branchKey: 'br_live_payload',
+        offlineEnabled: false,
+      ),
+      httpClient: MockClient((request) async {
+        if (request.url.path.endsWith('/manifest')) {
+          return http.Response(
+            _manifestJson(
+              releaseId: 'rel_payload',
+              requested: 'en',
+              resolved: 'en',
+              reason: 'device',
+              supported: ['en'],
+            ),
+            200,
+          );
+        }
+        return http.Response('{"home":{"title":42}}', 200);
+      }),
+    );
+
+    await expectLater(client.initialize(deviceLocale: 'en'),
+        throwsA(isA<LinguaFlowException>()));
+    client.dispose();
   });
 
   test('batches opted-in missing key telemetry', () async {
@@ -257,7 +305,7 @@ String _manifestJson({
   bool telemetry = false,
 }) =>
     jsonEncode({
-      'version': 1,
+      'version': 2,
       'releaseId': releaseId,
       'sequence': 1,
       'requestedLocale': requested,
@@ -276,4 +324,9 @@ String _manifestJson({
       'overlays': <String>[],
       'overlay': null,
       'missingKeyTelemetry': {'enabled': telemetry, 'maxBatchSize': 100},
+      'runtimeTelemetry': {
+        'token': 'telemetry-token',
+        'expiresAt':
+            DateTime.now().add(const Duration(minutes: 5)).toIso8601String(),
+      },
     });

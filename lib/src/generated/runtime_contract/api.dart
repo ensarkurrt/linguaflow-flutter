@@ -34,6 +34,7 @@ part 'model/app_attest_challenge_response_dto.dart';
 part 'model/app_attest_registration_request_dto.dart';
 part 'model/delivery_manifest_response_dto.dart';
 part 'model/delivery_rollout_response_dto.dart';
+part 'model/delivery_runtime_telemetry_response_dto.dart';
 part 'model/integrity_grant_response_dto.dart';
 part 'model/missing_key_report_request_dto.dart';
 part 'model/missing_key_report_response_dto.dart';
@@ -41,6 +42,9 @@ part 'model/missing_key_telemetry_policy_response_dto.dart';
 part 'model/play_integrity_challenge_request_dto.dart';
 part 'model/play_integrity_challenge_response_dto.dart';
 part 'model/play_integrity_token_request_dto.dart';
+part 'model/runtime_metric_item_dto.dart';
+part 'model/runtime_metric_report_request_dto.dart';
+part 'model/runtime_metric_report_response_dto.dart';
 
 /// An [ApiClient] instance that uses the default values obtained from
 /// the OpenAPI specification file.

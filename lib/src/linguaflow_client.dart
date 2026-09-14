@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert';
 import 'dart:math';
 import 'package:flutter/foundation.dart';
@@ -12,6 +13,8 @@ import 'linguaflow_models.dart';
 import 'localization_cache.dart';
 import 'missing_key_reporter.dart';
 import 'offline_locale_resolver.dart';
+import 'runtime_metric_reporter.dart';
+import 'generated/runtime_contract/api.dart' as contract;
 
 class LinguaFlowClient extends ChangeNotifier {
   LinguaFlowClient({
@@ -24,6 +27,7 @@ class LinguaFlowClient extends ChangeNotifier {
         _ownsHttpClient = httpClient == null,
         _cache = cache ?? LocalizationCache(),
         _assetBundle = assetBundle ?? rootBundle {
+    config.validate();
     _api = DeliveryApi(
       config: config,
       httpClient: _http,
@@ -35,6 +39,11 @@ class LinguaFlowClient extends ChangeNotifier {
       api: _api,
       manifest: () => _manifest,
     );
+    _runtimeMetrics = RuntimeMetricReporter(
+        config: config,
+        api: _api,
+        manifest: () => _manifest,
+        enabled: deviceIntegrityProvider != null);
   }
 
   static Future<LinguaFlowClient> create({
@@ -63,6 +72,7 @@ class LinguaFlowClient extends ChangeNotifier {
   final AssetBundle _assetBundle;
   late final DeliveryApi _api;
   late final MissingKeyReporter _missingKeys;
+  late final RuntimeMetricReporter _runtimeMetrics;
   Map<String, dynamic>? _activeBundle;
   LocaleManifest? _manifest;
   DateTime? _lastCheckedAt;
@@ -157,6 +167,9 @@ class LinguaFlowClient extends ChangeNotifier {
       );
       _lastCheckedAt = DateTime.now();
       _manifest = manifest;
+      _runtimeMetrics.record(
+          contract.RuntimeMetricItemDtoKindEnum.deliveryRequest,
+          contract.RuntimeMetricItemDtoOutcomeEnum.success);
       await _cache.writeValue(
           '$_bundleCachePrefix:manifest', jsonEncode(manifest.toJson()));
       if (selectedLocale != null &&
@@ -171,10 +184,28 @@ class LinguaFlowClient extends ChangeNotifier {
         _activate(downloaded!.data, LinguaFlowBundleSource.downloaded);
         return;
       }
-      final delivery = await _api.bundle(
-        locale: manifest.resolvedLocale,
-        etag: downloaded?.etag,
-      );
+      final BundleDelivery delivery;
+      try {
+        delivery = await _api.bundle(
+            locale: manifest.resolvedLocale, etag: downloaded?.etag);
+        _runtimeMetrics.record(
+            contract.RuntimeMetricItemDtoKindEnum.deliveryRequest,
+            contract.RuntimeMetricItemDtoOutcomeEnum.success);
+      } on Object catch (error) {
+        final outcome = error is TimeoutException
+            ? contract.RuntimeMetricItemDtoOutcomeEnum.timeout
+            : error is LinguaFlowException && (error.statusCode ?? 0) >= 500
+                ? contract.RuntimeMetricItemDtoOutcomeEnum.serverError
+                : contract.RuntimeMetricItemDtoOutcomeEnum.failure;
+        _runtimeMetrics.record(
+            contract.RuntimeMetricItemDtoKindEnum.deliveryRequest, outcome);
+        _runtimeMetrics.record(
+            error is BundlePayloadException
+                ? contract.RuntimeMetricItemDtoKindEnum.bundleParse
+                : contract.RuntimeMetricItemDtoKindEnum.bundleDownload,
+            contract.RuntimeMetricItemDtoOutcomeEnum.failure);
+        rethrow;
+      }
       switch (delivery) {
         case BundleNotModified():
           if (downloaded == null) {
@@ -183,6 +214,12 @@ class LinguaFlowClient extends ChangeNotifier {
           }
           _activate(downloaded.data, LinguaFlowBundleSource.downloaded);
         case BundleContent(:final data, :final etag):
+          _runtimeMetrics.record(
+              contract.RuntimeMetricItemDtoKindEnum.bundleDownload,
+              contract.RuntimeMetricItemDtoOutcomeEnum.success);
+          _runtimeMetrics.record(
+              contract.RuntimeMetricItemDtoKindEnum.bundleParse,
+              contract.RuntimeMetricItemDtoOutcomeEnum.success);
           await _cache.write(cacheKey, data,
               etag: etag, releaseId: manifest.releaseId);
           _activate(data, LinguaFlowBundleSource.remote);
@@ -224,7 +261,7 @@ class LinguaFlowClient extends ChangeNotifier {
           await _readBundled(selectedLocale ?? deviceLocale);
       if (configuredAsset != null) {
         _manifest = LocaleManifest(
-          version: 1,
+          version: linguaFlowRuntimeContractVersion,
           releaseId: 'bundled',
           sequence: 0,
           requestedLocale: configuredAsset.$1,
@@ -242,6 +279,8 @@ class LinguaFlowClient extends ChangeNotifier {
           rolloutCandidateReleaseId: 'bundled',
           rolloutPercentage: 100,
           rolloutSelection: 'stable',
+          runtimeTelemetryToken: null,
+          runtimeTelemetryExpiresAt: null,
         );
         _activate(configuredAsset.$2, LinguaFlowBundleSource.bundled);
         return;
@@ -269,17 +308,25 @@ class LinguaFlowClient extends ChangeNotifier {
   }
 
   Future<LocaleManifest?> _readCachedManifest() async {
-    final raw = await _cache.readValue('$_bundleCachePrefix:manifest');
-    return raw == null
-        ? null
-        : LocaleManifest.fromJson(jsonDecode(raw) as Map<String, dynamic>);
+    try {
+      final raw = await _cache.readValue('$_bundleCachePrefix:manifest');
+      if (raw == null) return null;
+      final decoded = jsonDecode(raw);
+      if (decoded is! Map) return null;
+      return LocaleManifest.fromJson(decoded.cast<String, dynamic>());
+    } on Object {
+      await _cache.removeValue('$_bundleCachePrefix:manifest');
+      return null;
+    }
   }
 
   Future<LocaleManifest?> _readBundledManifest() async {
     try {
       final raw = await _assetBundle
           .loadString('${config.bundledAssetPath}/manifest.json');
-      return LocaleManifest.fromJson(jsonDecode(raw) as Map<String, dynamic>);
+      final decoded = jsonDecode(raw);
+      if (decoded is! Map) return null;
+      return LocaleManifest.fromJson(decoded.cast<String, dynamic>());
     } catch (_) {
       return null;
     }
@@ -290,7 +337,7 @@ class LinguaFlowClient extends ChangeNotifier {
     try {
       final raw = await _assetBundle
           .loadString('${config.bundledAssetPath}/$locale.json');
-      final body = jsonDecode(raw) as Map<String, dynamic>;
+      final body = decodeTranslationBundle(jsonDecode(raw));
       return (locale, body);
     } catch (_) {
       return null;
@@ -322,9 +369,14 @@ class LinguaFlowClient extends ChangeNotifier {
     }
     if (value is! String) return null;
     try {
-      return MessageFormat(value, locale: resolvedLocale ?? 'en')
+      final formatted = MessageFormat(value, locale: resolvedLocale ?? 'en')
           .format({...key.arguments, ...arguments});
+      _runtimeMetrics.record(contract.RuntimeMetricItemDtoKindEnum.icuFormat,
+          contract.RuntimeMetricItemDtoOutcomeEnum.success);
+      return formatted;
     } on FormatException catch (error) {
+      _runtimeMetrics.record(contract.RuntimeMetricItemDtoKindEnum.icuFormat,
+          contract.RuntimeMetricItemDtoOutcomeEnum.failure);
       throw LinguaFlowException(
           'Invalid ICU MessageFormat for ${key.path}: ${error.message}', null);
     }
@@ -344,11 +396,15 @@ class LinguaFlowClient extends ChangeNotifier {
     };
   }
 
-  Future<void> flushMissingKeys() => _missingKeys.flush();
+  Future<void> flushMissingKeys() async {
+    await _missingKeys.flush();
+    await _runtimeMetrics.flush();
+  }
 
   @override
   void dispose() {
     _missingKeys.dispose();
+    _runtimeMetrics.dispose();
     if (_ownsHttpClient) _http.close();
     super.dispose();
   }

@@ -30,4 +30,12 @@ await client.initialize(deviceLocale: 'tr-TR');
 
 App Attest ve Play Integrity sağlayıcıları opt-in olarak eklenebilir. Üretim anahtarlarını kaynak koda koymayın; branch key herkese açık bir kimliktir, bütünlük grant'i sunucu tarafından kısa ömürlü üretilir.
 
+Missing-key telemetrisi açıldığında SDK uygulama sürüm adı ve build/version code bilgisini iOS ve
+Android host uygulamasından platform channel ile otomatik okur. Config'teki `appVersion` yalnız test
+veya özel sürüm etiketi gerektiğinde kullanılan opsiyonel override'dır.
+
+Bir App Attest veya Play Integrity provider yapılandırıldığında SDK bundle indirme/parse, Delivery
+API ve ICU sonuçlarını toplu runtime telemetrisi olarak gönderir. Sunucu yalnız bütünlük doğrulamalı
+raporları otomatik rollout sağlık kapılarına dahil eder.
+
 Ayrıntılı kurulum ve güvenlik akışları repository içindeki `docs/` klasöründedir.

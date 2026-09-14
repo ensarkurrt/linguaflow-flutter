@@ -216,6 +216,8 @@ class ApiClient {
           return DeliveryManifestResponseDto.fromJson(value);
         case 'DeliveryRolloutResponseDto':
           return DeliveryRolloutResponseDto.fromJson(value);
+        case 'DeliveryRuntimeTelemetryResponseDto':
+          return DeliveryRuntimeTelemetryResponseDto.fromJson(value);
         case 'IntegrityGrantResponseDto':
           return IntegrityGrantResponseDto.fromJson(value);
         case 'MissingKeyReportRequestDto':
@@ -230,6 +232,12 @@ class ApiClient {
           return PlayIntegrityChallengeResponseDto.fromJson(value);
         case 'PlayIntegrityTokenRequestDto':
           return PlayIntegrityTokenRequestDto.fromJson(value);
+        case 'RuntimeMetricItemDto':
+          return RuntimeMetricItemDto.fromJson(value);
+        case 'RuntimeMetricReportRequestDto':
+          return RuntimeMetricReportRequestDto.fromJson(value);
+        case 'RuntimeMetricReportResponseDto':
+          return RuntimeMetricReportResponseDto.fromJson(value);
         default:
           dynamic match;
           if (value is List &&

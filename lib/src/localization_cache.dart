@@ -2,6 +2,8 @@ import 'dart:convert';
 
 import 'package:shared_preferences/shared_preferences.dart';
 
+import 'delivery_api.dart';
+
 class CachedBundle {
   const CachedBundle({required this.data, this.etag, this.releaseId});
   final Map<String, dynamic> data;
@@ -24,16 +26,26 @@ class LocalizationCache {
       final store = await _store;
       final raw = store.getString('linguaflow:$key');
       if (raw == null) return null;
-      final envelope = jsonDecode(raw) as Map<String, dynamic>;
-      final savedAt = DateTime.tryParse(envelope['savedAt'] as String? ?? '');
+      final decoded = jsonDecode(raw);
+      if (decoded is! Map) return null;
+      final envelope = decoded.cast<String, dynamic>();
+      final savedAtValue = envelope['savedAt'];
+      final savedAt =
+          savedAtValue is String ? DateTime.tryParse(savedAtValue) : null;
       if (savedAt == null ||
           (maxAge != null && DateTime.now().difference(savedAt) > maxAge)) {
         return null;
       }
+      final etag = envelope['etag'];
+      final releaseId = envelope['releaseId'];
+      if ((etag != null && etag is! String) ||
+          (releaseId != null && releaseId is! String)) {
+        return null;
+      }
       return CachedBundle(
-          data: (envelope['data'] as Map).cast<String, dynamic>(),
-          etag: envelope['etag'] as String?,
-          releaseId: envelope['releaseId'] as String?);
+          data: decodeTranslationBundle(envelope['data']),
+          etag: etag as String?,
+          releaseId: releaseId as String?);
     } on Object {
       return null;
     }

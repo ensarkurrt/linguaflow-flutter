@@ -8,6 +8,9 @@ import 'package:http/http.dart' as http;
 import 'device_integrity.dart';
 import 'linguaflow_config.dart';
 import 'linguaflow_models.dart';
+import 'safe_http_client.dart';
+
+const _maxIntegrityResponseBytes = 256 * 1024;
 
 class PlayIntegrityProvider implements LinguaFlowDeviceIntegrityProvider {
   PlayIntegrityProvider({
@@ -83,22 +86,27 @@ class PlayIntegrityProvider implements LinguaFlowDeviceIntegrityProvider {
     final uri = Uri.parse(linguaflowApiOrigin).resolve(
       '/v1/bundles/${Uri.encodeComponent(branchKey)}/attestation/android/$operation',
     );
-    final response = await _http
-        .post(uri,
-            headers: const {
-              'content-type': 'application/json',
-              'x-linguaflow-sdk': 'flutter',
-              'x-linguaflow-sdk-version': linguaFlowFlutterSdkVersion,
-              'x-linguaflow-contract-version': '1',
-            },
-            body: jsonEncode(payload))
-        .timeout(const Duration(seconds: 60));
+    final response = await sendSafeHttpRequest(
+      _http,
+      'POST',
+      uri,
+      headers: const {
+        'content-type': 'application/json',
+        'x-linguaflow-sdk': 'flutter',
+        'x-linguaflow-sdk-version': linguaFlowFlutterSdkVersion,
+        'x-linguaflow-contract-version': '$linguaFlowRuntimeContractVersion',
+      },
+      body: jsonEncode(payload),
+      maxResponseBytes: _maxIntegrityResponseBytes,
+    );
     if (response.statusCode < 200 || response.statusCode >= 300) {
       throw LinguaFlowException(
           'Play Integrity exchange failed', response.statusCode);
     }
     try {
-      return (jsonDecode(response.body) as Map).cast<String, dynamic>();
+      final decoded = jsonDecode(response.body);
+      if (decoded is! Map) throw const FormatException();
+      return decoded.cast<String, dynamic>();
     } on Object {
       throw LinguaFlowException('Invalid Play Integrity response', null);
     }

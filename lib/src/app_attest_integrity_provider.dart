@@ -8,6 +8,9 @@ import 'package:http/http.dart' as http;
 import 'device_integrity.dart';
 import 'linguaflow_config.dart';
 import 'linguaflow_models.dart';
+import 'safe_http_client.dart';
+
+const _maxIntegrityResponseBytes = 256 * 1024;
 
 enum AppAttestEnvironment { development, production }
 
@@ -114,18 +117,20 @@ class AppAttestIntegrityProvider implements LinguaFlowDeviceIntegrityProvider {
     final uri = Uri.parse(linguaflowApiOrigin).resolve(
       '/v1/bundles/${Uri.encodeComponent(branchKey)}/attestation/apple/$operation',
     );
-    final response = await _http
-        .post(
-          uri,
-          headers: const {
-            'content-type': 'application/json',
-            'x-linguaflow-sdk': 'flutter',
-            'x-linguaflow-sdk-version': linguaFlowFlutterSdkVersion,
-            'x-linguaflow-contract-version': '1',
-          },
-          body: jsonEncode(payload),
-        )
-        .timeout(const Duration(seconds: 15));
+    final response = await sendSafeHttpRequest(
+      _http,
+      'POST',
+      uri,
+      headers: const {
+        'content-type': 'application/json',
+        'x-linguaflow-sdk': 'flutter',
+        'x-linguaflow-sdk-version': linguaFlowFlutterSdkVersion,
+        'x-linguaflow-contract-version': '$linguaFlowRuntimeContractVersion',
+      },
+      body: jsonEncode(payload),
+      maxResponseBytes: _maxIntegrityResponseBytes,
+      timeout: const Duration(seconds: 15),
+    );
     if (response.statusCode == acceptedError) {
       return _JsonResponse(response.statusCode, const {});
     }
@@ -136,13 +141,11 @@ class AppAttestIntegrityProvider implements LinguaFlowDeviceIntegrityProvider {
       );
     }
     try {
+      final decoded = jsonDecode(response.body);
+      if (decoded is! Map) throw const FormatException();
       return _JsonResponse(
-        response.statusCode,
-        jsonDecode(response.body) as Map<String, dynamic>,
-      );
-    } on FormatException {
-      throw LinguaFlowException('Invalid App Attest response', null);
-    } on TypeError {
+          response.statusCode, decoded.cast<String, dynamic>());
+    } on Object {
       throw LinguaFlowException('Invalid App Attest response', null);
     }
   }

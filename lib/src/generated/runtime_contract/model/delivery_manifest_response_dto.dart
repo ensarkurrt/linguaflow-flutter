@@ -28,6 +28,7 @@ class DeliveryManifestResponseDto {
     this.overlays = const [],
     required this.overlay,
     required this.missingKeyTelemetry,
+    required this.runtimeTelemetry,
   });
 
   DeliveryManifestResponseDtoVersionEnum version;
@@ -61,6 +62,8 @@ class DeliveryManifestResponseDto {
 
   MissingKeyTelemetryPolicyResponseDto missingKeyTelemetry;
 
+  DeliveryRuntimeTelemetryResponseDto? runtimeTelemetry;
+
   @override
   bool operator ==(Object other) =>
       identical(this, other) ||
@@ -79,7 +82,8 @@ class DeliveryManifestResponseDto {
           other.bundlePath == bundlePath &&
           _deepEquality.equals(other.overlays, overlays) &&
           other.overlay == overlay &&
-          other.missingKeyTelemetry == missingKeyTelemetry;
+          other.missingKeyTelemetry == missingKeyTelemetry &&
+          other.runtimeTelemetry == runtimeTelemetry;
 
   @override
   int get hashCode =>
@@ -98,11 +102,12 @@ class DeliveryManifestResponseDto {
       (bundlePath.hashCode) +
       (overlays.hashCode) +
       (overlay == null ? 0 : overlay!.hashCode) +
-      (missingKeyTelemetry.hashCode);
+      (missingKeyTelemetry.hashCode) +
+      (runtimeTelemetry == null ? 0 : runtimeTelemetry!.hashCode);
 
   @override
   String toString() =>
-      'DeliveryManifestResponseDto[version=$version, releaseId=$releaseId, sequence=$sequence, requestedLocale=$requestedLocale, resolvedLocale=$resolvedLocale, reason=$reason, fallbackLocale=$fallbackLocale, supportedLocales=$supportedLocales, translatedLocales=$translatedLocales, localeMappings=$localeMappings, rollout=$rollout, bundlePath=$bundlePath, overlays=$overlays, overlay=$overlay, missingKeyTelemetry=$missingKeyTelemetry]';
+      'DeliveryManifestResponseDto[version=$version, releaseId=$releaseId, sequence=$sequence, requestedLocale=$requestedLocale, resolvedLocale=$resolvedLocale, reason=$reason, fallbackLocale=$fallbackLocale, supportedLocales=$supportedLocales, translatedLocales=$translatedLocales, localeMappings=$localeMappings, rollout=$rollout, bundlePath=$bundlePath, overlays=$overlays, overlay=$overlay, missingKeyTelemetry=$missingKeyTelemetry, runtimeTelemetry=$runtimeTelemetry]';
 
   Map<String, dynamic> toJson() {
     final json = <String, dynamic>{};
@@ -125,6 +130,11 @@ class DeliveryManifestResponseDto {
       json[r'overlay'] = null;
     }
     json[r'missingKeyTelemetry'] = this.missingKeyTelemetry;
+    if (this.runtimeTelemetry != null) {
+      json[r'runtimeTelemetry'] = this.runtimeTelemetry;
+    } else {
+      json[r'runtimeTelemetry'] = null;
+    }
     return json;
   }
 
@@ -197,6 +207,8 @@ class DeliveryManifestResponseDto {
             'Required key "DeliveryManifestResponseDto[missingKeyTelemetry]" is missing from JSON.');
         assert(json[r'missingKeyTelemetry'] != null,
             'Required key "DeliveryManifestResponseDto[missingKeyTelemetry]" has a null value in JSON.');
+        assert(json.containsKey(r'runtimeTelemetry'),
+            'Required key "DeliveryManifestResponseDto[runtimeTelemetry]" is missing from JSON.');
         return true;
       }());
 
@@ -231,6 +243,8 @@ class DeliveryManifestResponseDto {
         overlay: mapValueOfType<String>(json, r'overlay'),
         missingKeyTelemetry: MissingKeyTelemetryPolicyResponseDto.fromJson(
             json[r'missingKeyTelemetry'])!,
+        runtimeTelemetry: DeliveryRuntimeTelemetryResponseDto.fromJson(
+            json[r'runtimeTelemetry']),
       );
     }
     return null;
@@ -302,11 +316,12 @@ class DeliveryManifestResponseDto {
     'overlays',
     'overlay',
     'missingKeyTelemetry',
+    'runtimeTelemetry',
   };
 }
 
 enum DeliveryManifestResponseDtoVersionEnum {
-  number1._(1),
+  number2._(2),
   ;
 
   /// Instantiate a new enum with the provided value.
@@ -372,8 +387,8 @@ class DeliveryManifestResponseDtoVersionEnumTypeTransformer {
     }
     if (data != null) {
       switch (data) {
-        case 1:
-          return DeliveryManifestResponseDtoVersionEnum.number1;
+        case 2:
+          return DeliveryManifestResponseDtoVersionEnum.number2;
         default:
           if (!allowNull) {
             throw ArgumentError('Unknown enum value to decode: $data');
